@@ -301,4 +301,12 @@ app.get('/api/history', async (req, res) => {
   }
 });
 
-app.listen(PORT);
+// For local development
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
+}
+
+// Export for Vercel serverless
+export default app;

@@ -526,7 +526,7 @@
       font-weight: 700;
     }
 
-    
+    /* Tooltip for delta vs best rate */
     .delta-info {
       position: relative;
       display: inline-block;
@@ -565,7 +565,7 @@
     .delta-info:focus .tooltip,
     .delta-info.show .tooltip { opacity: 1; visibility: visible; }
 
-    
+    /* Chart loading overlay */
     .chart-viewport { position: relative; }
     .chart-overlay {
       position: absolute;
@@ -774,7 +774,7 @@
       color: #f56565;
     }
 
-    
+    /* Use a fixed-height viewport to prevent vertical expansion */
     .chart-viewport {
       position: relative;
       width: 100%;
@@ -787,7 +787,7 @@
       display: block;
     }
 
-    
+    /* Make the chart a bit shorter on smaller screens */
     @media (max-width: 1024px) {
       .chart-viewport { height: 220px; }
     }
@@ -1026,11 +1026,11 @@
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script>
-
+    // Format rates with adaptive precision to avoid hiding differences
     function formatRateValue(rate) {
       if (rate === null || rate === undefined || !Number.isFinite(rate)) return '-';
       const abs = Math.abs(rate);
-
+      // Use significant digits for tiny rates, fixed for larger values
       if (abs < 0.1) {
         return Number(rate.toPrecision(6)).toString();
       }
@@ -1072,6 +1072,7 @@
         return;
       }
 
+      // Reset all cards to loading state
       resetCardsToLoading();
 
       document.getElementById('loading').classList.remove('visible');
@@ -1079,9 +1080,10 @@
       document.getElementById('error').classList.remove('visible');
       document.getElementById('compare-btn').disabled = true;
       document.getElementById('winner-message').style.display = 'none';
-
+      // Removed savings summary message
       document.getElementById('chart-section').style.display = 'none';
 
+      // Store results as they arrive
       const results = {
         mid: null,
         mc: null,
@@ -1089,6 +1091,7 @@
         amex: null
       };
 
+      // Load each provider independently
       const providers = ['mid', 'mc', 'visa', 'amex'];
 
       const promises = providers.map(async (provider) => {
@@ -1103,17 +1106,21 @@
           results[provider] = data;
           updateCard(provider, data, base, quote, results);
 
+          // Update winner and savings dynamically as each provider loads
           updateWinnerDynamic(results, base, quote, amount);
         } catch (error) {
-
+          // silently mark as error; avoid console noise in production
           markCardAsError(provider);
         }
       });
 
+      // Wait for all to complete
       await Promise.allSettled(promises);
 
+      // Final update
       updateWinnerDynamic(results, base, quote, amount);
 
+      // Show history chart only when all are done
       if (results.mid && results.mc && results.visa && results.amex) {
         try {
         } catch {}
@@ -1123,6 +1130,7 @@
       document.getElementById('compare-btn').disabled = false;
     });
 
+    // Enable tooltip on touch/click for the delta badges
     document.addEventListener('click', (e) => {
       const el = e.target.closest('.delta-info');
       if (!el) return;
@@ -1148,6 +1156,7 @@
     function updateCard(provider, data, base, quote, results = {}) {
       const card = document.getElementById(`${provider}-card`);
 
+      // Check if rate is unavailable
       if (data.unavailable) {
         card.className = 'rate-card loaded unavailable';
         const rateDisplay = document.getElementById(`${provider}-rate`);
@@ -1183,6 +1192,7 @@
       const labelEl = document.getElementById(`${provider}-label`);
       rateDisplay.innerHTML = `<span class="currency-pair" style="font-size: 1rem; color: #a0aec0;">${amountFormatted} ${base} =</span> <span class="rate-value converted">${convertedFormatted}</span><span class="currency-pair">${quote}</span>`;
 
+      // Add delta vs current best rate (among loaded providers)
       if (labelEl) {
         let labelText = `@ 1 ${base} = ${rateFormatted} ${quote}`;
         try {
@@ -1210,6 +1220,7 @@
         labelEl.style.display = 'block';
       }
 
+      // Show day delta - only if changed
       if (data.dayDeltaPct !== null && data.dayDeltaPct !== undefined && Math.abs(data.dayDeltaPct) >= 0.01) {
         const currentDate = new Date(data.date);
         const yesterday = new Date(currentDate);
@@ -1232,7 +1243,8 @@
       }
     }
 
-
+    // Update winner and savings incrementally as results arrive.
+    // Safe to call at any time; no-op until at least one provider loaded.
     function updateWinnerDynamic(results, base, quote, amount) {
       try {
         const loaded = Object.entries(results)
@@ -1242,10 +1254,12 @@
             return { name, value: val, card: document.getElementById(`${name}-card`) };
           });
 
+        // Need at least one loaded to highlight, two to compare
         if (loaded.length === 0) return;
 
         const maxVal = Math.max(...loaded.map(r => r.value));
 
+        // Reset styles for all known cards first
         ['mid','mc','visa','amex'].forEach(p => {
           const card = document.getElementById(`${p}-card`);
           if (!card) return;
@@ -1255,21 +1269,25 @@
           card.querySelectorAll('.position-chip').forEach(c => c.remove());
         });
 
+        // Rank providers by converted value (desc)
         const sorted = loaded.slice().sort((a, b) => b.value - a.value);
 
+        // Place the best in the center slot and others (2,3,4) below
         const midContainer = document.querySelector('.mid-container');
         const row = document.getElementById('circuits-row');
         if (midContainer && row && sorted.length > 0) {
           const winner = sorted[0];
 
+          // Move any existing card out of the center except the winner
           midContainer.querySelectorAll('.rate-card').forEach(card => {
             if (card !== winner.card) row.appendChild(card);
           });
-
+          // Ensure winner is in center
           if (winner.card.parentElement !== midContainer) {
             midContainer.insertBefore(winner.card, midContainer.firstChild);
           }
 
+          // Apply styles and badges
           sorted.forEach((r, idx) => {
             const rateValue = r.card.querySelector('.rate-value');
             if (!rateValue) return;
@@ -1282,7 +1300,7 @@
             } else {
               rateValue.classList.add('loser');
               const chip = document.createElement('div');
-              const rankNum = idx + 1; 
+              const rankNum = idx + 1; // 2,3,4
               chip.className = `position-chip rank-${rankNum}`;
               const suffix = rankNum === 2 ? '2nd' : (rankNum === 3 ? '3rd' : `${rankNum}th`);
               chip.textContent = suffix;
@@ -1290,12 +1308,15 @@
             }
           });
 
+          // Reorder row as 2nd, 3rd, 4th
           const losers = sorted.slice(1);
           losers.forEach(r => row.appendChild(r.card));
         }
 
+        // Update per-card savings info
         const nameMap = { mid: 'Mid-Market', mc: 'Mastercard', visa: 'Visa', amex: 'Amex' };
 
+        // Find the winner to reference in messages
         const winner = loaded.find(r => r.value === maxVal);
         const winnerName = winner ? nameMap[winner.name] : 'Best';
 
@@ -1307,7 +1328,7 @@
           const fmt = (x) => (Math.abs(x) < 1 ? x.toFixed(4) : x.toFixed(2));
 
           if (Math.abs(diff) < 0.0001) {
-
+            // This is the best rate - calculate savings vs other providers
             const others = loaded.filter(other => other.name !== r.name);
             if (others.length > 0) {
               const totalSavings = others.reduce((sum, other) => sum + (maxVal - other.value), 0);
@@ -1318,13 +1339,14 @@
               savingsEl.style.display = 'none';
             }
           } else {
-
+            // Show how much you would lose compared to the best
             savingsEl.textContent = `You lose ${fmt(diff)} ${quote} vs ${winnerName}`;
             savingsEl.className = 'rate-savings-info negative';
             savingsEl.style.display = 'block';
           }
         });
 
+        // Refresh the @-label delta to be versus the current best for all loaded providers
         try {
           const ratesLoaded = Object.entries(results)
             .filter(([_, v]) => v && !v.unavailable && typeof v.rate === 'number' && Number.isFinite(v.rate))
@@ -1354,7 +1376,9 @@
           }
         } catch {}
 
+        // Removed savings summary update block
 
+        // If all four are present (or amex is unavailable), show the detailed winner message
         const amexAvailable = results.amex && !results.amex.unavailable;
         if (results.mid && results.mc && results.visa && (amexAvailable || results.amex)) {
           showWinner({
@@ -1368,7 +1392,7 @@
           }, base, quote);
         }
       } catch (e) {
-
+        // Keep UI resilient; don't propagate UI errors back to request flow
         console.error('updateWinnerDynamic failed:', e);
       }
     }
@@ -1380,6 +1404,7 @@
         { name: 'visa', value: results.visa.rate, card: document.getElementById('visa-card') }
       ];
 
+      // Only add Amex if available
       if (results.amex && results.amex.rate) {
         rates.push({ name: 'amex', value: results.amex.rate, card: document.getElementById('amex-card') });
       }
@@ -1387,6 +1412,7 @@
       const maxRate = Math.max(...rates.map(r => r.value));
       const winner = rates.find(r => r.value === maxRate);
 
+      // Clear previous chips
       ['mid','mc','visa','amex'].forEach(p => {
         const card = document.getElementById(`${p}-card`);
         if (!card) return;
@@ -1396,13 +1422,15 @@
         if (el) el.classList.remove('winner', 'loser');
       });
 
+      // Sort all providers by value desc
       const sorted = rates.slice().sort((a, b) => b.value - a.value);
 
+      // Move winner to center and others to row
       const midContainer = document.querySelector('.mid-container');
       const row = document.getElementById('circuits-row');
       if (midContainer && row && sorted.length > 0) {
         const top = sorted[0];
-
+        // Move any non-winner out of center
         midContainer.querySelectorAll('.rate-card').forEach(card => {
           if (card !== top.card) row.appendChild(card);
         });
@@ -1410,6 +1438,7 @@
           midContainer.insertBefore(top.card, midContainer.firstChild);
         }
 
+        // Colors and chips
         sorted.forEach((r, idx) => {
           const rateValue = r.card.querySelector('.rate-value');
           if (!rateValue) return;
@@ -1422,7 +1451,7 @@
           } else {
             rateValue.classList.add('loser');
             const chip = document.createElement('div');
-            const rankNum = idx + 1; 
+            const rankNum = idx + 1; // 2,3,4
             chip.className = `position-chip rank-${rankNum}`;
             const suffix = rankNum === 2 ? '2nd' : (rankNum === 3 ? '3rd' : `${rankNum}th`);
             chip.textContent = suffix;
@@ -1430,6 +1459,7 @@
           }
         });
 
+        // Append losers (2,3,4) in order
         const losers = sorted.slice(1);
         losers.forEach(r => row.appendChild(r.card));
       }
@@ -1471,7 +1501,197 @@
       }
     }
 
-    
+    // removed unused displayResults()
+    /* function displayResults(data, base, quote) {
+      const midRate = data.mid.toFixed(4);
+      const mcRate = data.mc.toFixed(4);
+      const visaRate = data.visa.toFixed(4);
+      const amexRate = data.amex.toFixed(4);
+      const mcDeltaPct = data.mcDeltaPct.toFixed(2);
+      const visaDeltaPct = data.visaDeltaPct.toFixed(2);
+      const amexDeltaPct = data.amexDeltaPct.toFixed(2);
+
+      const midCard = document.getElementById('mid-card');
+      const mcCard = document.getElementById('mc-card');
+      const visaCard = document.getElementById('visa-card');
+      const amexCard = document.getElementById('amex-card');
+
+      midCard.querySelectorAll('.winner-chip').forEach(c => c.remove());
+      mcCard.querySelectorAll('.winner-chip').forEach(c => c.remove());
+      visaCard.querySelectorAll('.winner-chip').forEach(c => c.remove());
+      amexCard.querySelectorAll('.winner-chip').forEach(c => c.remove());
+
+      const currentDate = new Date(data.date);
+      const yesterday = new Date(currentDate);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+
+      const rates = [
+        { name: 'mid', value: parseFloat(midRate), card: midCard },
+        { name: 'mc', value: parseFloat(mcRate), card: mcCard },
+        { name: 'visa', value: parseFloat(visaRate), card: visaCard },
+        { name: 'amex', value: parseFloat(amexRate), card: amexCard }
+      ];
+
+      const maxRate = Math.max(...rates.map(r => r.value));
+      const winner = rates.find(r => r.value === maxRate);
+
+      let midRateClass = '';
+      let mcRateClass = '';
+      let visaRateClass = '';
+      let amexRateClass = '';
+
+      if (winner.name === 'mid') {
+        midRateClass = 'winner';
+        mcRateClass = 'loser';
+        visaRateClass = 'loser';
+        amexRateClass = 'loser';
+      } else if (winner.name === 'mc') {
+        midRateClass = 'loser';
+        mcRateClass = 'winner';
+        visaRateClass = 'loser';
+        amexRateClass = 'loser';
+      } else if (winner.name === 'visa') {
+        midRateClass = 'loser';
+        mcRateClass = 'loser';
+        visaRateClass = 'winner';
+        amexRateClass = 'loser';
+      } else if (winner.name === 'amex') {
+        midRateClass = 'loser';
+        mcRateClass = 'loser';
+        visaRateClass = 'loser';
+        amexRateClass = 'winner';
+      }
+
+      document.getElementById('mid-rate').innerHTML = `<span class="currency-pair">1 ${base} =</span><span class="rate-value ${midRateClass}">${midRate}</span><span class="currency-pair">${quote}</span>`;
+      document.getElementById('mid-source').textContent = data.sources.mid;
+
+      document.getElementById('mc-rate').innerHTML = `<span class="currency-pair">1 ${base} =</span><span class="rate-value ${mcRateClass}">${mcRate}</span><span class="currency-pair">${quote}</span>`;
+      document.getElementById('mc-source').textContent = data.sources.mc;
+
+      document.getElementById('visa-rate').innerHTML = `<span class="currency-pair">1 ${base} =</span><span class="rate-value ${visaRateClass}">${visaRate}</span><span class="currency-pair">${quote}</span>`;
+      document.getElementById('visa-source').textContent = data.sources.visa;
+
+      document.getElementById('amex-rate').innerHTML = `<span class="currency-pair">1 ${base} =</span><span class="rate-value ${amexRateClass}">${amexRate}</span><span class="currency-pair">${quote}</span>`;
+      document.getElementById('amex-source').textContent = data.sources.amex;
+
+      if (data.midDeltaPct !== null && data.midDeltaPct !== undefined) {
+        const midDeltaInfo = document.getElementById('mid-delta-info');
+        const midDeltaIcon = document.getElementById('mid-delta-icon');
+        const midDeltaText = document.getElementById('mid-delta-text');
+        midDeltaInfo.style.display = 'flex';
+
+        if (Math.abs(data.midDeltaPct) < 0.01) {
+          midDeltaIcon.textContent = '=';
+          midDeltaIcon.className = 'delta-icon neutral';
+          midDeltaText.innerHTML = `ECB rate unchanged compared to ${yesterdayStr}`;
+        } else if (data.midDeltaPct > 0) {
+          midDeltaIcon.textContent = '▲';
+          midDeltaIcon.className = 'delta-icon green';
+          midDeltaText.innerHTML = `ECB rate increased by <span class="delta-pct">${data.midDeltaPct.toFixed(2)}%</span> compared to ${yesterdayStr}`;
+        } else {
+          midDeltaIcon.textContent = '▼';
+          midDeltaIcon.className = 'delta-icon red';
+          midDeltaText.innerHTML = `ECB rate decreased by <span class="delta-pct">${Math.abs(data.midDeltaPct).toFixed(2)}%</span> compared to ${yesterdayStr}`;
+        }
+      }
+
+      if (data.mcDayDeltaPct !== null && data.mcDayDeltaPct !== undefined) {
+        const mcDeltaInfo = document.getElementById('mc-delta-info');
+        const mcDeltaIcon = document.getElementById('mc-delta-icon');
+        const mcDeltaText = document.getElementById('mc-delta-text');
+        mcDeltaInfo.style.display = 'flex';
+
+        if (Math.abs(data.mcDayDeltaPct) < 0.01) {
+          mcDeltaIcon.textContent = '=';
+          mcDeltaIcon.className = 'delta-icon neutral';
+          mcDeltaText.innerHTML = `Mastercard rate unchanged compared to ${yesterdayStr}`;
+        } else if (data.mcDayDeltaPct > 0) {
+          mcDeltaIcon.textContent = '▲';
+          mcDeltaIcon.className = 'delta-icon green';
+          mcDeltaText.innerHTML = `Mastercard rate increased by <span class="delta-pct">${data.mcDayDeltaPct.toFixed(2)}%</span> compared to ${yesterdayStr}`;
+        } else {
+          mcDeltaIcon.textContent = '▼';
+          mcDeltaIcon.className = 'delta-icon red';
+          mcDeltaText.innerHTML = `Mastercard rate decreased by <span class="delta-pct">${Math.abs(data.mcDayDeltaPct).toFixed(2)}%</span> compared to ${yesterdayStr}`;
+        }
+      }
+
+      if (data.visaDayDeltaPct !== null && data.visaDayDeltaPct !== undefined) {
+        const visaDeltaInfo = document.getElementById('visa-delta-info');
+        const visaDeltaIcon = document.getElementById('visa-delta-icon');
+        const visaDeltaText = document.getElementById('visa-delta-text');
+        visaDeltaInfo.style.display = 'flex';
+
+        if (Math.abs(data.visaDayDeltaPct) < 0.01) {
+          visaDeltaIcon.textContent = '=';
+          visaDeltaIcon.className = 'delta-icon neutral';
+          visaDeltaText.innerHTML = `Visa rate unchanged compared to ${yesterdayStr}`;
+        } else if (data.visaDayDeltaPct > 0) {
+          visaDeltaIcon.textContent = '▲';
+          visaDeltaIcon.className = 'delta-icon green';
+          visaDeltaText.innerHTML = `Visa rate increased by <span class="delta-pct">${data.visaDayDeltaPct.toFixed(2)}%</span> compared to ${yesterdayStr}`;
+        } else {
+          visaDeltaIcon.textContent = '▼';
+          visaDeltaIcon.className = 'delta-icon red';
+          visaDeltaText.innerHTML = `Visa rate decreased by <span class="delta-pct">${Math.abs(data.visaDayDeltaPct).toFixed(2)}%</span> compared to ${yesterdayStr}`;
+        }
+      }
+
+      if (data.amexDayDeltaPct !== null && data.amexDayDeltaPct !== undefined) {
+        const amexDeltaInfo = document.getElementById('amex-delta-info');
+        const amexDeltaIcon = document.getElementById('amex-delta-icon');
+        const amexDeltaText = document.getElementById('amex-delta-text');
+        amexDeltaInfo.style.display = 'flex';
+
+        if (Math.abs(data.amexDayDeltaPct) < 0.01) {
+          amexDeltaIcon.textContent = '=';
+          amexDeltaIcon.className = 'delta-icon neutral';
+          amexDeltaText.innerHTML = `Amex rate unchanged compared to ${yesterdayStr}`;
+        } else if (data.amexDayDeltaPct > 0) {
+          amexDeltaIcon.textContent = '▲';
+          amexDeltaIcon.className = 'delta-icon green';
+          amexDeltaText.innerHTML = `Amex rate increased by <span class="delta-pct">${data.amexDayDeltaPct.toFixed(2)}%</span> compared to ${yesterdayStr}`;
+        } else {
+          amexDeltaIcon.textContent = '▼';
+          amexDeltaIcon.className = 'delta-icon red';
+          amexDeltaText.innerHTML = `Amex rate decreased by <span class="delta-pct">${Math.abs(data.amexDayDeltaPct).toFixed(2)}%</span> compared to ${yesterdayStr}`;
+        }
+      }
+
+      const winnerMsg = document.getElementById('winner-message');
+      const winnerText = document.getElementById('winner-text');
+      const winnerDelta = document.getElementById('winner-delta');
+
+      winnerMsg.style.display = 'block';
+      const chip = document.createElement('div');
+      chip.className = 'winner-chip';
+      chip.textContent = 'Better Rate';
+      winner.card.appendChild(chip);
+
+      if (winner.name === 'mid') {
+        winnerText.textContent = '🎉 ECB Mid-Market wins';
+        winnerText.style.color = '#48bb78';
+        const mcDiff = ((maxRate - parseFloat(mcRate)) / maxRate * 100).toFixed(2);
+        const visaDiff = ((maxRate - parseFloat(visaRate)) / maxRate * 100).toFixed(2);
+        const amexDiff = ((maxRate - parseFloat(amexRate)) / maxRate * 100).toFixed(2);
+        winnerDelta.textContent = `Mid-market beats Mastercard by ${mcDiff}%, Visa by ${visaDiff}%, and Amex by ${amexDiff}%`;
+      } else if (winner.name === 'mc') {
+        winnerText.textContent = '🎉 Mastercard wins';
+        winnerText.style.color = '#48bb78';
+        winnerDelta.textContent = `Mastercard offers ${mcDeltaPct}% more than the mid-market rate`;
+      } else if (winner.name === 'visa') {
+        winnerText.textContent = '🎉 Visa wins';
+        winnerText.style.color = '#48bb78';
+        winnerDelta.textContent = `Visa offers ${visaDeltaPct}% more than the mid-market rate`;
+      } else if (winner.name === 'amex') {
+        winnerText.textContent = '🎉 American Express wins';
+        winnerText.style.color = '#48bb78';
+        winnerDelta.textContent = `American Express offers ${amexDeltaPct}% more than the mid-market rate`;
+      }
+
+      document.getElementById('results').classList.add('visible');
+    } */
 
     function showError(message) {
       const errorEl = document.getElementById('error');
