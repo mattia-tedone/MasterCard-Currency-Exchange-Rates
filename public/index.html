@@ -1,0 +1,1770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Currency Exchange Rate Comparison</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+      min-height: 100vh;
+      color: #fff;
+      padding: 2rem 1rem;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+
+    .header h1 {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .header p {
+      color: #a0aec0;
+      font-size: 1.1rem;
+    }
+
+    .controls {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    .controls-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr auto 1fr;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+      align-items: end;
+    }
+
+    @media (max-width: 768px) {
+      .controls-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .switch-btn {
+      width: 48px;
+      height: 48px;
+      padding: 0;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 50%;
+      color: #fff;
+      font-size: 1.5rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: none;
+      margin-bottom: 0.2rem;
+    }
+
+    .switch-btn:hover:not(:disabled) {
+      background: rgba(102, 126, 234, 0.2);
+      border-color: #667eea;
+      transform: rotate(180deg);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .switch-btn:active:not(:disabled) {
+      transform: rotate(180deg) scale(0.95);
+    }
+
+    @media (max-width: 768px) {
+      .switch-btn {
+        display: none;
+      }
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    label {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #cbd5e0;
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 0.875rem 1rem;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      font-size: 1rem;
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      transition: all 0.3s ease;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: #667eea;
+      background: rgba(255, 255, 255, 0.12);
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    select option {
+      background: #1a202c;
+      color: #fff;
+    }
+
+    button {
+      width: 100%;
+      padding: 1rem 2rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 1.125rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
+    }
+
+    button:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 3rem;
+      display: none;
+    }
+
+    .loading.visible {
+      display: block;
+    }
+
+    .spinner {
+      border: 4px solid rgba(255, 255, 255, 0.1);
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 1rem;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .error {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 12px;
+      padding: 1rem 1.5rem;
+      margin-bottom: 1.5rem;
+      color: #fca5a5;
+      display: none;
+      backdrop-filter: blur(10px);
+    }
+
+    .error.visible {
+      display: block;
+    }
+
+    .results {
+      display: none;
+    }
+
+    .results.visible {
+      display: block;
+    }
+
+    .conversion-header {
+      text-align: center;
+      margin-bottom: 2rem;
+      font-size: 2rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .currency-flag {
+      font-size: 1.5rem;
+      margin: 0 0.5rem;
+    }
+
+    .rate-comparison {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .rate-card {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 2rem;
+      text-align: center;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      min-height: 200px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .rate-card.loading {
+      background: rgba(255, 255, 255, 0.02);
+      border-color: rgba(255, 255, 255, 0.05);
+    }
+
+    .rate-card.error {
+      background: rgba(239, 68, 68, 0.05);
+      border-color: rgba(239, 68, 68, 0.2);
+    }
+
+    .rate-card.unavailable {
+      opacity: 0.5;
+      background: rgba(255, 255, 255, 0.02);
+      border-color: rgba(255, 255, 255, 0.05);
+    }
+
+    .unavailable-message {
+      color: #a0aec0;
+      font-size: 0.875rem;
+      font-weight: 500;
+      margin-top: 1rem;
+    }
+
+    .loading-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      color: #718096;
+      font-size: 0.875rem;
+    }
+
+    .loading-state .spinner-small {
+      border: 3px solid rgba(255, 255, 255, 0.1);
+      border-top: 3px solid #667eea;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      animation: spin 1s linear infinite;
+    }
+
+    .error-state {
+      color: #f56565;
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+
+    .rate-card-content {
+      display: none;
+    }
+
+    .rate-card.loaded .rate-card-content {
+      display: block;
+    }
+
+    .rate-card.loaded .loading-state,
+    .rate-card.loaded .error-state {
+      display: none;
+    }
+
+    .rate-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #667eea, #764ba2);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .rate-card:hover::before {
+      opacity: 1;
+    }
+
+    .rate-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    .rate-provider {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .provider-logo {
+      height: 40px;
+      width: auto;
+    }
+
+    .provider-name {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #cbd5e0;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .rate-display {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 0.5rem;
+      font-variant-numeric: tabular-nums;
+      display: flex;
+      align-items: baseline;
+      justify-content: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .rate-display .currency-pair {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .rate-display .rate-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #fff 0%, #e2e8f0 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .rate-display .rate-value.converted {
+      font-size: 2.25rem;
+      line-height: 1.1;
+    }
+
+    .rate-display .rate-value.winner {
+      background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .rate-display .rate-value.loser {
+      background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .rate-label {
+      font-size: 0.75rem;
+      color: #a0aec0;
+      font-weight: 500;
+      display: none;
+    }
+
+    .rate-source {
+      font-size: 0.75rem;
+      color: #718096;
+      margin-top: 0.75rem;
+    }
+
+    .rate-delta-info {
+      font-size: 0.75rem;
+      margin-top: 0.75rem;
+      padding: 0.5rem;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .rate-savings-info {
+      font-size: 0.8rem;
+      margin-top: 0.75rem;
+      padding: 0.6rem;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      color: #cbd5e0;
+      text-align: center;
+      font-weight: 500;
+    }
+
+    .rate-savings-info.positive {
+      background: rgba(72, 187, 120, 0.1);
+      color: #48bb78;
+    }
+
+    .rate-savings-info.negative {
+      background: rgba(245, 101, 101, 0.1);
+      color: #f56565;
+    }
+
+    .rate-delta-info .delta-icon {
+      font-size: 1rem;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+
+    .rate-delta-info .delta-icon.green {
+      color: #48bb78;
+    }
+
+    .rate-delta-info .delta-icon.red {
+      color: #f56565;
+    }
+
+    .rate-delta-info .delta-icon.neutral {
+      color: #a0aec0;
+    }
+
+    .rate-delta-info .delta-vs-yesterday {
+      color: #718096;
+      font-size: 0.75rem;
+      line-height: 1.4;
+      flex: 1;
+    }
+
+    .rate-delta-info .delta-vs-yesterday .delta-pct {
+      font-weight: 700;
+    }
+
+    .delta-card {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 2.5rem;
+      text-align: center;
+    }
+
+    .delta-label {
+      font-size: 1rem;
+      color: #cbd5e0;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 1.5rem;
+    }
+
+    .delta-value {
+      font-size: 4rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .delta-value.positive {
+      color: #48bb78;
+    }
+
+    .delta-value.negative {
+      color: #f56565;
+    }
+
+    .delta-value.neutral {
+      color: #a0aec0;
+    }
+
+    .delta-arrow {
+      font-size: 3rem;
+    }
+
+    .delta-explanation {
+      font-size: 0.875rem;
+      color: #a0aec0;
+      line-height: 1.6;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    .disclaimer {
+      margin-top: 2rem;
+      padding: 1.5rem;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      font-size: 0.875rem;
+      color: #718096;
+      line-height: 1.7;
+    }
+
+    .disclaimer strong {
+      color: #cbd5e0;
+    }
+
+    @media (max-width: 768px) {
+      .header h1 {
+        font-size: 2rem;
+      }
+
+      .rate-display {
+        font-size: 2rem;
+      }
+
+      .delta-value {
+        font-size: 3rem;
+      }
+    }
+
+    .chart-card {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 1.5rem 1.5rem 1rem 1.5rem;
+      margin-top: 2rem;
+    }
+
+    .chart-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .chart-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #e2e8f0;
+    }
+
+    .chart-subtitle {
+      font-size: 0.85rem;
+      color: #a0aec0;
+    }
+
+    .range-selector {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .range-btn {
+      padding: 0.5rem 1rem;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      color: #cbd5e0;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      width: auto;
+    }
+
+    .range-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: #667eea;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .range-btn.active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-color: #667eea;
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .winner-chip {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+      color: white;
+      padding: 0.4rem 0.8rem;
+      border-radius: 16px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      box-shadow: 0 2px 8px rgba(72, 187, 120, 0.4);
+    }
+
+    .rate-delta-info .arrow {
+      font-weight: bold;
+      margin-right: 0.25rem;
+    }
+
+    .rate-delta-info .arrow.green {
+      color: #48bb78;
+    }
+
+    .rate-delta-info .arrow.red {
+      color: #f56565;
+    }
+
+    /* Use a fixed-height viewport to prevent vertical expansion */
+    .chart-viewport {
+      position: relative;
+      width: 100%;
+      height: 240px;
+      overflow: hidden;
+    }
+    #rates-chart {
+      width: 100% !important;
+      height: 100% !important;
+      display: block;
+    }
+
+    /* Make the chart a bit shorter on smaller screens */
+    @media (max-width: 1024px) {
+      .chart-viewport { height: 220px; }
+    }
+    @media (max-width: 768px) {
+      .chart-viewport { height: 200px; }
+    }
+    @media (max-width: 480px) {
+      .chart-viewport { height: 170px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>💱 Currency Exchange Comparison</h1>
+      <p>Compare Mastercard rates with mid-market ECB rates</p>
+    </div>
+
+    <div class="controls">
+      <div class="controls-grid">
+        <div class="control-group">
+          <label for="date">📅 Date</label>
+          <input type="date" id="date" value="">
+        </div>
+        <div class="control-group">
+          <label for="amount">Amount</label>
+          <input type="number" id="amount" value="1" step="any" min="0" placeholder="1" />
+        </div>
+        <div class="control-group">
+          <label for="base">From Currency</label>
+          <select id="base">
+            <option value="EUR">🇪🇺 EUR - Euro</option>
+            <option value="USD">🇺🇸 USD - US Dollar</option>
+            <option value="GBP">🇬🇧 GBP - British Pound</option>
+            <option value="JPY">🇯🇵 JPY - Japanese Yen</option>
+            <option value="CHF">🇨🇭 CHF - Swiss Franc</option>
+            <option value="AUD">🇦🇺 AUD - Australian Dollar</option>
+            <option value="CAD">🇨🇦 CAD - Canadian Dollar</option>
+            <option value="CNY">🇨🇳 CNY - Chinese Yuan</option>
+            <option value="SEK">🇸🇪 SEK - Swedish Krona</option>
+            <option value="NZD">🇳🇿 NZD - New Zealand Dollar</option>
+          </select>
+        </div>
+        <button class="switch-btn" id="switch-currencies" title="Switch currencies">⇄</button>
+        <div class="control-group">
+          <label for="quote">To Currency</label>
+          <select id="quote">
+            <option value="JPY">🇯🇵 JPY - Japanese Yen</option>
+            <option value="EUR">🇪🇺 EUR - Euro</option>
+            <option value="USD">🇺🇸 USD - US Dollar</option>
+            <option value="GBP">🇬🇧 GBP - British Pound</option>
+            <option value="CHF">🇨🇭 CHF - Swiss Franc</option>
+            <option value="AUD">🇦🇺 AUD - Australian Dollar</option>
+            <option value="CAD">🇨🇦 CAD - Canadian Dollar</option>
+            <option value="CNY">🇨🇳 CNY - Chinese Yuan</option>
+            <option value="SEK">🇸🇪 SEK - Swedish Krona</option>
+            <option value="NZD">🇳🇿 NZD - New Zealand Dollar</option>
+          </select>
+        </div>
+      </div>
+      <button id="compare-btn">Compare Rates</button>
+    </div>
+
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      <p>Fetching exchange rates...</p>
+    </div>
+
+    <div class="error" id="error"></div>
+
+    <div class="results" id="results">
+      <div id="winner-message" style="text-align: center; margin-bottom: 1.5rem; display: none;">
+        <div style="font-size: 1.75rem; font-weight: 700; color: #48bb78;" id="winner-text">-</div>
+        <div style="font-size: 1rem; color: #a0aec0; margin-top: 0.5rem;" id="winner-delta">-</div>
+      </div>
+
+      <div class="rate-comparison">
+        <div class="rate-card" id="mid-card">
+          <div class="loading-state">
+            <div class="spinner-small"></div>
+            <div>Loading...</div>
+          </div>
+          <div class="error-state">Error loading rate.<br>Try again later.</div>
+          <div class="rate-card-content">
+            <div class="rate-provider">
+              <svg class="provider-logo" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="24" cy="24" r="23" fill="#1E40AF" stroke="#3B82F6" stroke-width="2"/>
+                <path d="M24 10v28M10 24h28" stroke="white" stroke-width="3" stroke-linecap="round"/>
+                <circle cx="24" cy="24" r="6" fill="white"/>
+              </svg>
+              <span class="provider-name">ECB Mid-Market</span>
+            </div>
+            <div class="rate-display" id="mid-rate">-</div>
+            <div class="rate-label" id="mid-label">1 EUR = - JPY</div>
+            <div class="rate-delta-info" id="mid-delta-info" style="display:none;">
+              <div class="delta-icon" id="mid-delta-icon">-</div>
+              <div class="delta-vs-yesterday" id="mid-delta-text">-</div>
+            </div>
+            <div class="rate-savings-info" id="mid-savings" style="display:none;"></div>
+          </div>
+        </div>
+
+        <div class="rate-card" id="mc-card">
+          <div class="loading-state">
+            <div class="spinner-small"></div>
+            <div>Loading...</div>
+          </div>
+          <div class="error-state">Error loading rate.<br>Try again later.</div>
+          <div class="rate-card-content">
+            <div class="rate-provider">
+              <svg class="provider-logo" viewBox="0 0 131.39 86.9" xmlns="http://www.w3.org/2000/svg">
+                <rect fill="#ff5f00" height="60.43" rx="4.62" width="34.6" x="48.37" y="13.23"/>
+                <path d="m51.94 43.45a38.38 38.38 0 0 1 14.7-30.22 38.41 38.41 0 1 0 0 60.43 38.38 38.38 0 0 1 -14.7-30.21z" fill="#eb001b"/>
+                <path d="m128.76 43.45a38.39 38.39 0 0 1 -62.12 30.21 38.4 38.4 0 0 0 0-60.43 38.39 38.39 0 0 1 62.12 30.22z" fill="#f79e1b"/>
+              </svg>
+              <span class="provider-name">Mastercard</span>
+            </div>
+            <div class="rate-display" id="mc-rate">-</div>
+            <div class="rate-label" id="mc-label">1 EUR = - JPY</div>
+            <div class="rate-delta-info" id="mc-delta-info" style="display:none;">
+              <div class="delta-icon" id="mc-delta-icon">-</div>
+              <div class="delta-vs-yesterday" id="mc-delta-text">-</div>
+            </div>
+            <div class="rate-savings-info" id="mc-savings" style="display:none;"></div>
+          </div>
+        </div>
+
+        <div class="rate-card" id="visa-card">
+          <div class="loading-state">
+            <div class="spinner-small"></div>
+            <div>Loading...</div>
+          </div>
+          <div class="error-state">Error loading rate.<br>Try again later.</div>
+          <div class="rate-card-content">
+            <div class="rate-provider">
+              <svg class="provider-logo" viewBox="0 0 1000 324.68" xmlns="http://www.w3.org/2000/svg">
+                <path d="m651.19.5-96.42 323.2h-92.09l96.42-323.2zm246.72 208.98c.18-85.07-117.66-89.78-116.88-127.82.25-11.55 11.26-23.86 35.32-27 11.92-1.55 44.79-2.73 82.05 14.38l14.62-68.29c-20.03-7.28-45.79-14.26-77.81-14.26-82.22 0-140.09 43.73-140.55 106.34-.52 46.32 41.36 72.18 72.92 87.58 32.48 15.8 43.38 25.92 43.24 40.03-.23 21.62-25.92 31.23-49.89 31.6-41.92.63-66.24-11.33-85.61-20.39l-15.12 70.58c19.48 8.96 55.48 16.77 92.79 17.17 87.44 0 144.52-43.2 144.92-110.09m137.69 114.22h80.62l-70.36-323.2h-74.23c-16.75 0-30.94 9.74-37.21 24.73l-131.61 298.47h87.39s14.28-39.59 17.53-48.3h107.32c2.52 11.36 10.21 48.3 10.21 48.3zm-93.39-114.62 44.23-121.84 25.43 121.84zm-411.87-208.58-91.54 243.96-9.78-49.13c-16.92-57.46-69.64-119.79-128.68-150.94l82.54 279.05h88.03l131.01-322.94z" fill="#1434cb"/>
+                <path d="m232.25.5h-136.08l-1.07 6.48c104.15 26.67 173.12 91 201.69 168.27l-29.1-145.37c-5.01-20.37-19.45-28.8-35.44-29.38" fill="#f7b600"/>
+              </svg>
+              <span class="provider-name">Visa</span>
+            </div>
+            <div class="rate-display" id="visa-rate">-</div>
+            <div class="rate-label" id="visa-label">1 EUR = - JPY</div>
+            <div class="rate-delta-info" id="visa-delta-info" style="display:none;">
+              <div class="delta-icon" id="visa-delta-icon">-</div>
+              <div class="delta-vs-yesterday" id="visa-delta-text">-</div>
+            </div>
+            <div class="rate-savings-info" id="visa-savings" style="display:none;"></div>
+          </div>
+        </div>
+
+        <div class="rate-card" id="amex-card">
+          <div class="loading-state">
+            <div class="spinner-small"></div>
+            <div>Loading...</div>
+          </div>
+          <div class="error-state">Error loading rate.<br>Try again later.</div>
+          <div class="rate-card-content">
+            <div class="rate-provider">
+              <svg class="provider-logo" viewBox="0 0 152 152" xmlns="http://www.w3.org/2000/svg">
+                <rect fill="#006fcf" width="152" height="152" rx="10"/>
+                <path fill="#fff" d="M58.58 69.74h7.95l-3.97-9.77-4.02 9.77h.04zm67.02-12.48v2.62c-1.01-.78-2.72-1.42-4.55-1.42-4.23 0-7.29 2.98-7.29 7.65 0 5.81 4.07 7.65 7.85 7.65 1.66 0 3.29-.44 4.51-1.59v2.78h6.64V57.26h-7.16zm-66.93 0l-9.27 22.69h7.73l1.52-3.77h10.18l1.52 3.77h7.85l-9.27-22.69h-10.26zm40.83 0v22.69h6.64V69.74h8.78v10.21h6.68V57.26h-6.68v10.09h-8.78V57.26h-6.64zm-18.07 0v3.81h6.19v18.88h6.64V61.07h6.23v-3.81h-19.06zM51.43 64.61v-3.45H33.09v22.69h18.86v-3.45H40.21v-5.56h10.62v-3.41H40.21v-6.82h11.22zM121.5 67.64c2.07 0 3.65-.92 3.65-2.82 0-1.79-1.38-2.7-3.33-2.7h-4.47v5.52h4.15zm7.09 1.42c-1.83-1.19-4.07-1.59-6.59-1.59h-4.63v12.48h-6.6V57.26h11.59c2.64 0 5.01.36 6.84 1.59 1.94 1.27 3.17 3.49 3.17 6.03 0 3.25-2.03 5.64-4.19 6.35l5.77 8.73h-7.85l-4.63-7.41c2.92-.24 5.28-1.23 7.12-3.49z"/>
+              </svg>
+              <span class="provider-name">American Express</span>
+            </div>
+            <div class="rate-display" id="amex-rate">-</div>
+            <div class="rate-label" id="amex-label">1 EUR = - JPY</div>
+            <div class="rate-delta-info" id="amex-delta-info" style="display:none;">
+              <div class="delta-icon" id="amex-delta-icon">-</div>
+              <div class="delta-vs-yesterday" id="amex-delta-text">-</div>
+            </div>
+            <div class="rate-savings-info" id="amex-savings" style="display:none;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="savings-message" style="text-align: center; margin-top: 0.5rem; color: #cbd5e0; display: none;"></div>
+
+      <div class="chart-card" id="chart-section" style="display:none;">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Rate History</div>
+            <div class="chart-subtitle" id="chart-caption">-</div>
+          </div>
+          <div class="range-selector">
+            <button class="range-btn active" data-days="7">7 Days</button>
+            <button class="range-btn" data-days="15">15 Days</button>
+            <button class="range-btn" data-days="30">30 Days</button>
+            <button class="range-btn" id="custom-range-btn">Custom</button>
+          </div>
+        </div>
+        <div id="custom-range-inputs" style="display:none; margin-bottom: 1rem;">
+          <div style="display: flex; gap: 1rem; align-items: center;">
+            <div style="flex: 1;">
+              <label style="font-size: 0.75rem; margin-bottom: 0.25rem;">From</label>
+              <input type="date" id="custom-start-date" style="width: 100%; padding: 0.5rem;">
+            </div>
+            <div style="flex: 1;">
+              <label style="font-size: 0.75rem; margin-bottom: 0.25rem;">To</label>
+              <input type="date" id="custom-end-date" style="width: 100%; padding: 0.5rem;">
+            </div>
+            <button id="apply-custom-range" style="width: auto; padding: 0.5rem 1.5rem; margin-top: 1.2rem;">Apply</button>
+          </div>
+        </div>
+        <div class="chart-viewport">
+          <canvas id="rates-chart"></canvas>
+        </div>
+        <div class="chart-stats" id="chart-stats" style="margin-top: 1rem; display: flex; justify-content: space-around; flex-wrap: wrap; gap: 1rem;">
+          <div class="stat-item">
+            <div style="font-size: 0.75rem; color: #a0aec0; margin-bottom: 0.25rem;">Avg. Mid-Market</div>
+            <div style="font-size: 1.25rem; font-weight: 700; color: #667eea;" id="avg-mid">-</div>
+          </div>
+          <div class="stat-item">
+            <div style="font-size: 0.75rem; color: #a0aec0; margin-bottom: 0.25rem;">Avg. Mastercard</div>
+            <div style="font-size: 1.25rem; font-weight: 700; color: #f79e1b;" id="avg-mc">-</div>
+          </div>
+          <div class="stat-item">
+            <div style="font-size: 0.75rem; color: #a0aec0; margin-bottom: 0.25rem;">Avg. Difference</div>
+            <div style="font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem;" id="avg-delta">
+              <span id="avg-delta-pct">-</span>
+              <span id="avg-delta-arrow" style="font-size: 1.5rem;">-</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="disclaimer">
+        <strong>Important:</strong> Mastercard rates are applied at transaction authorization or settlement time.
+        Discrepancies versus mid-market rates reflect the markup applied by Mastercard and your issuing bank.
+        Weekend and holiday rates may use the last available business day rate. These rates are indicative and
+        should be used for comparison purposes only.
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script>
+    // Format rates with adaptive precision to avoid hiding differences
+    function formatRateValue(rate) {
+      if (rate === null || rate === undefined || !Number.isFinite(rate)) return '-';
+      const abs = Math.abs(rate);
+      // Use significant digits for tiny rates, fixed for larger values
+      if (abs < 0.1) {
+        return Number(rate.toPrecision(6)).toString();
+      }
+      if (abs < 1) {
+        return Number(rate.toPrecision(6)).toString();
+      }
+      if (abs >= 1) {
+        return rate.toFixed(4);
+      }
+      return Number(rate.toPrecision(6)).toString();
+    }
+    const currencyFlags = {
+      EUR: '🇪🇺', USD: '🇺🇸', GBP: '🇬🇧', JPY: '🇯🇵',
+      CHF: '🇨🇭', AUD: '🇦🇺', CAD: '🇨🇦', CNY: '🇨🇳',
+      SEK: '🇸🇪', NZD: '🇳🇿'
+    };
+
+    document.getElementById('date').valueAsDate = new Date();
+
+    document.getElementById('switch-currencies').addEventListener('click', (e) => {
+      e.preventDefault();
+      const baseSelect = document.getElementById('base');
+      const quoteSelect = document.getElementById('quote');
+      const tempValue = baseSelect.value;
+      baseSelect.value = quoteSelect.value;
+      quoteSelect.value = tempValue;
+    });
+
+    document.getElementById('compare-btn').addEventListener('click', async () => {
+      const date = document.getElementById('date').value;
+      const base = document.getElementById('base').value;
+      const quote = document.getElementById('quote').value;
+      const amountStr = document.getElementById('amount').value || '1';
+      const amount = Math.max(0, parseFloat(amountStr) || 1);
+      currentAmount = amount;
+
+      if (!date || !base || !quote) {
+        showError('Please fill in all fields');
+        return;
+      }
+
+      // Reset all cards to loading state
+      resetCardsToLoading();
+
+      document.getElementById('loading').classList.remove('visible');
+      document.getElementById('results').classList.add('visible');
+      document.getElementById('error').classList.remove('visible');
+      document.getElementById('compare-btn').disabled = true;
+      document.getElementById('winner-message').style.display = 'none';
+      const savingsEl = document.getElementById('savings-message');
+      savingsEl.style.display = 'none';
+      savingsEl.textContent = '';
+      document.getElementById('chart-section').style.display = 'none';
+
+      // Store results as they arrive
+      const results = {
+        mid: null,
+        mc: null,
+        visa: null,
+        amex: null
+      };
+
+      // Load each provider independently
+      const providers = ['mid', 'mc', 'visa', 'amex'];
+
+      const promises = providers.map(async (provider) => {
+        try {
+          const response = await fetch(`/api/rate/${provider}?date=${date}&base=${base}&quote=${quote}&amount=${amount}`);
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.error || 'Failed to fetch rate');
+          }
+
+          results[provider] = data;
+          updateCard(provider, data, base, quote);
+
+          // Update winner and savings dynamically as each provider loads
+          updateWinnerDynamic(results, base, quote, amount);
+        } catch (error) {
+          // silently mark as error; avoid console noise in production
+          markCardAsError(provider);
+        }
+      });
+
+      // Wait for all to complete
+      await Promise.allSettled(promises);
+
+      // Final update
+      updateWinnerDynamic(results, base, quote, amount);
+
+      // Show savings and load history chart only when all are done
+      if (results.mid && results.mc && results.visa && results.amex) {
+        try {
+          const payouts = {
+            mid: results.mid.rate * amount,
+            mc: results.mc.rate * amount,
+            visa: results.visa.rate * amount,
+            amex: results.amex.rate * amount
+          };
+          const entries = Object.entries(payouts).map(([k,v]) => ({ name: k, value: v }));
+          const maxVal = Math.max(...entries.map(e => e.value));
+          const winner = entries.find(e => e.value === maxVal).name;
+          const nameMap = { mid: 'Mid-Market', mc: 'Mastercard', visa: 'Visa', amex: 'Amex' };
+          const cur = quote;
+          const fmtAmt = (x) => (Math.abs(x) < 1 ? x.toFixed(4) : x.toFixed(2));
+          const lines = entries
+            .filter(e => e.name !== winner)
+            .map(e => `${fmtAmt(maxVal - e.value)} ${cur} compared to ${nameMap[e.name]}`);
+          if (lines.length) {
+            savingsEl.textContent = `With ${nameMap[winner]} you save ${lines.join(', ')}`;
+            savingsEl.style.display = 'block';
+          }
+        } catch {}
+        loadHistory(date, base, quote).catch(() => {});
+      }
+
+      document.getElementById('compare-btn').disabled = false;
+    });
+
+    function resetCardsToLoading() {
+      const cards = ['mid-card', 'mc-card', 'visa-card', 'amex-card'];
+      cards.forEach(cardId => {
+        const card = document.getElementById(cardId);
+        card.className = 'rate-card loading';
+        card.querySelectorAll('.winner-chip').forEach(c => c.remove());
+      });
+    }
+
+    function markCardAsError(provider) {
+      const card = document.getElementById(`${provider}-card`);
+      card.className = 'rate-card error';
+    }
+
+    function updateCard(provider, data, base, quote) {
+      const card = document.getElementById(`${provider}-card`);
+
+      // Check if rate is unavailable
+      if (data.unavailable) {
+        card.className = 'rate-card loaded unavailable';
+        const rateDisplay = document.getElementById(`${provider}-rate`);
+        const deltaInfo = document.getElementById(`${provider}-delta-info`);
+        const labelEl = document.getElementById(`${provider}-label`);
+        const savingsEl = document.getElementById(`${provider}-savings`);
+
+        rateDisplay.innerHTML = `<span style="color: #a0aec0; font-size: 1.125rem;">Rate unavailable</span>`;
+        if (labelEl) {
+          labelEl.innerHTML = `<span class="unavailable-message">${data.reason || 'Currency pair not supported'}</span>`;
+          labelEl.style.display = 'block';
+        }
+        deltaInfo.style.display = 'none';
+        if (savingsEl) {
+          savingsEl.style.display = 'none';
+        }
+        return;
+      }
+
+      card.className = 'rate-card loaded';
+
+      const rateDisplay = document.getElementById(`${provider}-rate`);
+      const deltaInfo = document.getElementById(`${provider}-delta-info`);
+      const deltaIcon = document.getElementById(`${provider}-delta-icon`);
+      const deltaText = document.getElementById(`${provider}-delta-text`);
+
+      const rateFormatted = formatRateValue(data.rate);
+      const amount = (typeof data.amount === 'number') ? data.amount : 1;
+      const converted = (typeof data.converted === 'number') ? data.converted : (data.rate * amount);
+      const convertedFormatted = (Math.abs(converted) >= 1) ? converted.toFixed(2) : Number(converted.toPrecision(6)).toString();
+      const amountFormatted = (Math.abs(amount) >= 1) ? amount.toFixed(2) : Number(amount.toPrecision(6)).toString();
+
+      const labelEl = document.getElementById(`${provider}-label`);
+      rateDisplay.innerHTML = `<span class="currency-pair" style="font-size: 1rem; color: #a0aec0;">${amountFormatted} ${base} =</span> <span class="rate-value converted">${convertedFormatted}</span><span class="currency-pair">${quote}</span>`;
+      if (labelEl) {
+        labelEl.textContent = `@ 1 ${base} = ${rateFormatted} ${quote}`;
+        labelEl.style.display = 'block';
+      }
+
+      // Show day delta - only if changed
+      if (data.dayDeltaPct !== null && data.dayDeltaPct !== undefined && Math.abs(data.dayDeltaPct) >= 0.01) {
+        const currentDate = new Date(data.date);
+        const yesterday = new Date(currentDate);
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+
+        deltaInfo.style.display = 'flex';
+
+        if (data.dayDeltaPct > 0) {
+          deltaIcon.textContent = '▲';
+          deltaIcon.className = 'delta-icon green';
+          deltaText.innerHTML = `Rate increased by <span class="delta-pct">${data.dayDeltaPct.toFixed(2)}%</span> compared to ${yesterdayStr}`;
+        } else {
+          deltaIcon.textContent = '▼';
+          deltaIcon.className = 'delta-icon red';
+          deltaText.innerHTML = `Rate decreased by <span class="delta-pct">${Math.abs(data.dayDeltaPct).toFixed(2)}%</span> compared to ${yesterdayStr}`;
+        }
+      } else {
+        deltaInfo.style.display = 'none';
+      }
+    }
+
+    // Update winner and savings incrementally as results arrive.
+    // Safe to call at any time; no-op until at least one provider loaded.
+    function updateWinnerDynamic(results, base, quote, amount) {
+      try {
+        const loaded = Object.entries(results)
+          .filter(([_, v]) => v && !v.unavailable && typeof v.rate === 'number' && Number.isFinite(v.rate))
+          .map(([name, v]) => {
+            const val = (typeof v.converted === 'number') ? v.converted : (v.rate * (amount || 1));
+            return { name, value: val, card: document.getElementById(`${name}-card`) };
+          });
+
+        // Need at least one loaded to highlight, two to compare
+        if (loaded.length === 0) return;
+
+        const maxVal = Math.max(...loaded.map(r => r.value));
+
+        // Reset styles for all known cards first
+        ['mid','mc','visa','amex'].forEach(p => {
+          const card = document.getElementById(`${p}-card`);
+          if (!card) return;
+          const el = card.querySelector('.rate-value');
+          if (el) { el.classList.remove('winner', 'loser'); }
+          card.querySelectorAll('.winner-chip').forEach(c => c.remove());
+        });
+
+        // Apply styles to loaded ones only
+        loaded.forEach(r => {
+          const rateValue = r.card.querySelector('.rate-value');
+          if (!rateValue) return;
+          if (r.value === maxVal) {
+            rateValue.classList.add('winner');
+            const chip = document.createElement('div');
+            chip.className = 'winner-chip';
+            chip.textContent = 'Better Rate';
+            r.card.appendChild(chip);
+          } else {
+            rateValue.classList.add('loser');
+          }
+        });
+
+        // Update per-card savings info
+        const nameMap = { mid: 'Mid-Market', mc: 'Mastercard', visa: 'Visa', amex: 'Amex' };
+
+        // Find the winner to reference in messages
+        const winner = loaded.find(r => r.value === maxVal);
+        const winnerName = winner ? nameMap[winner.name] : 'Best';
+
+        loaded.forEach(r => {
+          const savingsEl = document.getElementById(`${r.name}-savings`);
+          if (!savingsEl) return;
+
+          const diff = maxVal - r.value;
+          const fmt = (x) => (Math.abs(x) < 1 ? x.toFixed(4) : x.toFixed(2));
+
+          if (Math.abs(diff) < 0.0001) {
+            // This is the best rate - calculate savings vs other providers
+            const others = loaded.filter(other => other.name !== r.name);
+            if (others.length > 0) {
+              const totalSavings = others.reduce((sum, other) => sum + (maxVal - other.value), 0);
+              savingsEl.textContent = `You save ${fmt(totalSavings)} ${quote} if you purchase with ${nameMap[r.name]}`;
+              savingsEl.className = 'rate-savings-info positive';
+              savingsEl.style.display = 'block';
+            } else {
+              savingsEl.style.display = 'none';
+            }
+          } else {
+            // Show how much you would lose compared to the best
+            savingsEl.textContent = `You lose ${fmt(diff)} ${quote} vs ${winnerName}`;
+            savingsEl.className = 'rate-savings-info negative';
+            savingsEl.style.display = 'block';
+          }
+        });
+
+        // Update savings summary using available providers
+        try {
+          const savingsEl = document.getElementById('savings-message');
+          const entries = Object.entries(results)
+            .filter(([_, v]) => v && !v.unavailable && typeof v.rate === 'number' && Number.isFinite(v.rate))
+            .map(([k, v]) => ({ name: k, converted: (typeof v.converted === 'number' ? v.converted : (v.rate * (amount || 1))) }));
+          if (entries.length >= 1) {
+            const maxVal = Math.max(...entries.map(e => e.converted));
+            const winner = entries.find(e => e.converted === maxVal);
+            const cur = quote;
+            const fmt = (x) => (Math.abs(x) < 1 ? x.toFixed(4) : x.toFixed(2));
+            const lines = entries
+              .filter(e => e.name !== winner.name)
+              .map(e => `${fmt(maxVal - e.converted)} ${cur} compared to ${nameMap[e.name]}`);
+            const prefix = `With ${nameMap[winner.name]} you save `;
+            savingsEl.textContent = lines.length ? (prefix + lines.join(', ')) : `Best so far: ${nameMap[winner.name]}`;
+            savingsEl.style.display = 'block';
+          }
+        } catch {}
+
+        // If all four are present, show the detailed winner message
+        if (results.mid && results.mc && results.visa && results.amex) {
+          showWinner({
+            mid: results.mid,
+            mc: results.mc,
+            visa: results.visa,
+            amex: results.amex,
+            mcDeltaPct: ((results.mc.rate - results.mid.rate) / results.mid.rate) * 100,
+            visaDeltaPct: ((results.visa.rate - results.mid.rate) / results.mid.rate) * 100,
+            amexDeltaPct: ((results.amex.rate - results.mid.rate) / results.mid.rate) * 100
+          }, base, quote);
+        }
+      } catch (e) {
+        // Keep UI resilient; don't propagate UI errors back to request flow
+        console.error('updateWinnerDynamic failed:', e);
+      }
+    }
+
+    function showWinner(results, base, quote) {
+      const rates = [
+        { name: 'mid', value: results.mid.rate, card: document.getElementById('mid-card') },
+        { name: 'mc', value: results.mc.rate, card: document.getElementById('mc-card') },
+        { name: 'visa', value: results.visa.rate, card: document.getElementById('visa-card') },
+        { name: 'amex', value: results.amex.rate, card: document.getElementById('amex-card') }
+      ];
+
+      const maxRate = Math.max(...rates.map(r => r.value));
+      const winner = rates.find(r => r.value === maxRate);
+
+      // Update rate colors
+      rates.forEach(r => {
+        const rateValue = r.card.querySelector('.rate-value');
+        if (r.value === maxRate) {
+          rateValue.classList.add('winner');
+          rateValue.classList.remove('loser');
+        } else {
+          rateValue.classList.add('loser');
+          rateValue.classList.remove('winner');
+        }
+      });
+
+      const chip = document.createElement('div');
+      chip.className = 'winner-chip';
+      chip.textContent = 'Better Rate';
+      winner.card.appendChild(chip);
+
+      const winnerMsg = document.getElementById('winner-message');
+      const winnerText = document.getElementById('winner-text');
+      const winnerDelta = document.getElementById('winner-delta');
+
+      winnerMsg.style.display = 'block';
+
+      const midRate = results.mid.rate;
+      const mcRate = results.mc.rate;
+      const visaRate = results.visa.rate;
+      const amexRate = results.amex.rate;
+
+      if (winner.name === 'mid') {
+        winnerText.textContent = '🎉 ECB Mid-Market wins';
+        winnerText.style.color = '#48bb78';
+        const mcDiff = ((maxRate - mcRate) / maxRate * 100).toFixed(2);
+        const visaDiff = ((maxRate - visaRate) / maxRate * 100).toFixed(2);
+        const amexDiff = ((maxRate - amexRate) / maxRate * 100).toFixed(2);
+        winnerDelta.textContent = `Mid-market beats Mastercard by ${mcDiff}%, Visa by ${visaDiff}%, and Amex by ${amexDiff}%`;
+      } else if (winner.name === 'mc') {
+        winnerText.textContent = '🎉 Mastercard wins';
+        winnerText.style.color = '#48bb78';
+        winnerDelta.textContent = `Mastercard offers ${results.mcDeltaPct.toFixed(2)}% more than the mid-market rate`;
+      } else if (winner.name === 'visa') {
+        winnerText.textContent = '🎉 Visa wins';
+        winnerText.style.color = '#48bb78';
+        winnerDelta.textContent = `Visa offers ${results.visaDeltaPct.toFixed(2)}% more than the mid-market rate`;
+      } else if (winner.name === 'amex') {
+        winnerText.textContent = '🎉 American Express wins';
+        winnerText.style.color = '#48bb78';
+        winnerDelta.textContent = `American Express offers ${results.amexDeltaPct.toFixed(2)}% more than the mid-market rate`;
+      }
+    }
+
+    // removed unused displayResults()
+    /* function displayResults(data, base, quote) {
+      const midRate = data.mid.toFixed(4);
+      const mcRate = data.mc.toFixed(4);
+      const visaRate = data.visa.toFixed(4);
+      const amexRate = data.amex.toFixed(4);
+      const mcDeltaPct = data.mcDeltaPct.toFixed(2);
+      const visaDeltaPct = data.visaDeltaPct.toFixed(2);
+      const amexDeltaPct = data.amexDeltaPct.toFixed(2);
+
+      const midCard = document.getElementById('mid-card');
+      const mcCard = document.getElementById('mc-card');
+      const visaCard = document.getElementById('visa-card');
+      const amexCard = document.getElementById('amex-card');
+
+      midCard.querySelectorAll('.winner-chip').forEach(c => c.remove());
+      mcCard.querySelectorAll('.winner-chip').forEach(c => c.remove());
+      visaCard.querySelectorAll('.winner-chip').forEach(c => c.remove());
+      amexCard.querySelectorAll('.winner-chip').forEach(c => c.remove());
+
+      const currentDate = new Date(data.date);
+      const yesterday = new Date(currentDate);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+
+      const rates = [
+        { name: 'mid', value: parseFloat(midRate), card: midCard },
+        { name: 'mc', value: parseFloat(mcRate), card: mcCard },
+        { name: 'visa', value: parseFloat(visaRate), card: visaCard },
+        { name: 'amex', value: parseFloat(amexRate), card: amexCard }
+      ];
+
+      const maxRate = Math.max(...rates.map(r => r.value));
+      const winner = rates.find(r => r.value === maxRate);
+
+      let midRateClass = '';
+      let mcRateClass = '';
+      let visaRateClass = '';
+      let amexRateClass = '';
+
+      if (winner.name === 'mid') {
+        midRateClass = 'winner';
+        mcRateClass = 'loser';
+        visaRateClass = 'loser';
+        amexRateClass = 'loser';
+      } else if (winner.name === 'mc') {
+        midRateClass = 'loser';
+        mcRateClass = 'winner';
+        visaRateClass = 'loser';
+        amexRateClass = 'loser';
+      } else if (winner.name === 'visa') {
+        midRateClass = 'loser';
+        mcRateClass = 'loser';
+        visaRateClass = 'winner';
+        amexRateClass = 'loser';
+      } else if (winner.name === 'amex') {
+        midRateClass = 'loser';
+        mcRateClass = 'loser';
+        visaRateClass = 'loser';
+        amexRateClass = 'winner';
+      }
+
+      document.getElementById('mid-rate').innerHTML = `<span class="currency-pair">1 ${base} =</span><span class="rate-value ${midRateClass}">${midRate}</span><span class="currency-pair">${quote}</span>`;
+      document.getElementById('mid-source').textContent = data.sources.mid;
+
+      document.getElementById('mc-rate').innerHTML = `<span class="currency-pair">1 ${base} =</span><span class="rate-value ${mcRateClass}">${mcRate}</span><span class="currency-pair">${quote}</span>`;
+      document.getElementById('mc-source').textContent = data.sources.mc;
+
+      document.getElementById('visa-rate').innerHTML = `<span class="currency-pair">1 ${base} =</span><span class="rate-value ${visaRateClass}">${visaRate}</span><span class="currency-pair">${quote}</span>`;
+      document.getElementById('visa-source').textContent = data.sources.visa;
+
+      document.getElementById('amex-rate').innerHTML = `<span class="currency-pair">1 ${base} =</span><span class="rate-value ${amexRateClass}">${amexRate}</span><span class="currency-pair">${quote}</span>`;
+      document.getElementById('amex-source').textContent = data.sources.amex;
+
+      if (data.midDeltaPct !== null && data.midDeltaPct !== undefined) {
+        const midDeltaInfo = document.getElementById('mid-delta-info');
+        const midDeltaIcon = document.getElementById('mid-delta-icon');
+        const midDeltaText = document.getElementById('mid-delta-text');
+        midDeltaInfo.style.display = 'flex';
+
+        if (Math.abs(data.midDeltaPct) < 0.01) {
+          midDeltaIcon.textContent = '=';
+          midDeltaIcon.className = 'delta-icon neutral';
+          midDeltaText.innerHTML = `ECB rate unchanged compared to ${yesterdayStr}`;
+        } else if (data.midDeltaPct > 0) {
+          midDeltaIcon.textContent = '▲';
+          midDeltaIcon.className = 'delta-icon green';
+          midDeltaText.innerHTML = `ECB rate increased by <span class="delta-pct">${data.midDeltaPct.toFixed(2)}%</span> compared to ${yesterdayStr}`;
+        } else {
+          midDeltaIcon.textContent = '▼';
+          midDeltaIcon.className = 'delta-icon red';
+          midDeltaText.innerHTML = `ECB rate decreased by <span class="delta-pct">${Math.abs(data.midDeltaPct).toFixed(2)}%</span> compared to ${yesterdayStr}`;
+        }
+      }
+
+      if (data.mcDayDeltaPct !== null && data.mcDayDeltaPct !== undefined) {
+        const mcDeltaInfo = document.getElementById('mc-delta-info');
+        const mcDeltaIcon = document.getElementById('mc-delta-icon');
+        const mcDeltaText = document.getElementById('mc-delta-text');
+        mcDeltaInfo.style.display = 'flex';
+
+        if (Math.abs(data.mcDayDeltaPct) < 0.01) {
+          mcDeltaIcon.textContent = '=';
+          mcDeltaIcon.className = 'delta-icon neutral';
+          mcDeltaText.innerHTML = `Mastercard rate unchanged compared to ${yesterdayStr}`;
+        } else if (data.mcDayDeltaPct > 0) {
+          mcDeltaIcon.textContent = '▲';
+          mcDeltaIcon.className = 'delta-icon green';
+          mcDeltaText.innerHTML = `Mastercard rate increased by <span class="delta-pct">${data.mcDayDeltaPct.toFixed(2)}%</span> compared to ${yesterdayStr}`;
+        } else {
+          mcDeltaIcon.textContent = '▼';
+          mcDeltaIcon.className = 'delta-icon red';
+          mcDeltaText.innerHTML = `Mastercard rate decreased by <span class="delta-pct">${Math.abs(data.mcDayDeltaPct).toFixed(2)}%</span> compared to ${yesterdayStr}`;
+        }
+      }
+
+      if (data.visaDayDeltaPct !== null && data.visaDayDeltaPct !== undefined) {
+        const visaDeltaInfo = document.getElementById('visa-delta-info');
+        const visaDeltaIcon = document.getElementById('visa-delta-icon');
+        const visaDeltaText = document.getElementById('visa-delta-text');
+        visaDeltaInfo.style.display = 'flex';
+
+        if (Math.abs(data.visaDayDeltaPct) < 0.01) {
+          visaDeltaIcon.textContent = '=';
+          visaDeltaIcon.className = 'delta-icon neutral';
+          visaDeltaText.innerHTML = `Visa rate unchanged compared to ${yesterdayStr}`;
+        } else if (data.visaDayDeltaPct > 0) {
+          visaDeltaIcon.textContent = '▲';
+          visaDeltaIcon.className = 'delta-icon green';
+          visaDeltaText.innerHTML = `Visa rate increased by <span class="delta-pct">${data.visaDayDeltaPct.toFixed(2)}%</span> compared to ${yesterdayStr}`;
+        } else {
+          visaDeltaIcon.textContent = '▼';
+          visaDeltaIcon.className = 'delta-icon red';
+          visaDeltaText.innerHTML = `Visa rate decreased by <span class="delta-pct">${Math.abs(data.visaDayDeltaPct).toFixed(2)}%</span> compared to ${yesterdayStr}`;
+        }
+      }
+
+      if (data.amexDayDeltaPct !== null && data.amexDayDeltaPct !== undefined) {
+        const amexDeltaInfo = document.getElementById('amex-delta-info');
+        const amexDeltaIcon = document.getElementById('amex-delta-icon');
+        const amexDeltaText = document.getElementById('amex-delta-text');
+        amexDeltaInfo.style.display = 'flex';
+
+        if (Math.abs(data.amexDayDeltaPct) < 0.01) {
+          amexDeltaIcon.textContent = '=';
+          amexDeltaIcon.className = 'delta-icon neutral';
+          amexDeltaText.innerHTML = `Amex rate unchanged compared to ${yesterdayStr}`;
+        } else if (data.amexDayDeltaPct > 0) {
+          amexDeltaIcon.textContent = '▲';
+          amexDeltaIcon.className = 'delta-icon green';
+          amexDeltaText.innerHTML = `Amex rate increased by <span class="delta-pct">${data.amexDayDeltaPct.toFixed(2)}%</span> compared to ${yesterdayStr}`;
+        } else {
+          amexDeltaIcon.textContent = '▼';
+          amexDeltaIcon.className = 'delta-icon red';
+          amexDeltaText.innerHTML = `Amex rate decreased by <span class="delta-pct">${Math.abs(data.amexDayDeltaPct).toFixed(2)}%</span> compared to ${yesterdayStr}`;
+        }
+      }
+
+      const winnerMsg = document.getElementById('winner-message');
+      const winnerText = document.getElementById('winner-text');
+      const winnerDelta = document.getElementById('winner-delta');
+
+      winnerMsg.style.display = 'block';
+      const chip = document.createElement('div');
+      chip.className = 'winner-chip';
+      chip.textContent = 'Better Rate';
+      winner.card.appendChild(chip);
+
+      if (winner.name === 'mid') {
+        winnerText.textContent = '🎉 ECB Mid-Market wins';
+        winnerText.style.color = '#48bb78';
+        const mcDiff = ((maxRate - parseFloat(mcRate)) / maxRate * 100).toFixed(2);
+        const visaDiff = ((maxRate - parseFloat(visaRate)) / maxRate * 100).toFixed(2);
+        const amexDiff = ((maxRate - parseFloat(amexRate)) / maxRate * 100).toFixed(2);
+        winnerDelta.textContent = `Mid-market beats Mastercard by ${mcDiff}%, Visa by ${visaDiff}%, and Amex by ${amexDiff}%`;
+      } else if (winner.name === 'mc') {
+        winnerText.textContent = '🎉 Mastercard wins';
+        winnerText.style.color = '#48bb78';
+        winnerDelta.textContent = `Mastercard offers ${mcDeltaPct}% more than the mid-market rate`;
+      } else if (winner.name === 'visa') {
+        winnerText.textContent = '🎉 Visa wins';
+        winnerText.style.color = '#48bb78';
+        winnerDelta.textContent = `Visa offers ${visaDeltaPct}% more than the mid-market rate`;
+      } else if (winner.name === 'amex') {
+        winnerText.textContent = '🎉 American Express wins';
+        winnerText.style.color = '#48bb78';
+        winnerDelta.textContent = `American Express offers ${amexDeltaPct}% more than the mid-market rate`;
+      }
+
+      document.getElementById('results').classList.add('visible');
+    } */
+
+    function showError(message) {
+      const errorEl = document.getElementById('error');
+      errorEl.textContent = '⚠️ ' + message;
+      errorEl.classList.add('visible');
+    }
+
+    let chartInstance = null;
+    let currentDate, currentBase, currentQuote, currentAmount;
+
+    async function loadHistory(date, base, quote, days = 7) {
+      currentDate = date;
+      currentBase = base;
+      currentQuote = quote;
+
+      currentAmount = currentAmount || (parseFloat(document.getElementById('amount').value || '1') || 1);
+      const section = document.getElementById('chart-section');
+      const caption = document.getElementById('chart-caption');
+      try {
+        caption.textContent = 'Loading last ' + days + ' days...';
+        section.style.display = 'block';
+        const res = await fetch(`/api/history?date=${date}&base=${base}&quote=${quote}&days=${days}&amount=${currentAmount}`);
+        const hist = await res.json();
+        if (!res.ok) throw new Error(hist.error || 'Failed history');
+
+        caption.textContent = `${hist.start} → ${hist.end}`;
+        renderChart(hist.labels, hist.series.mid, hist.series.mc, hist.series.visa, hist.series.amex, base, quote);
+        updateChartStats(hist.series.mid, hist.series.mc, hist.series.visa, hist.series.amex, hist.mcAvgDeltaPct, hist.visaAvgDeltaPct, hist.amexAvgDeltaPct, quote);
+      } catch (e) {
+        caption.textContent = 'History unavailable';
+      }
+    }
+
+    function updateChartStats(midSeries, mcSeries, visaSeries, amexSeries, mcAvgDeltaPct, visaAvgDeltaPct, amexAvgDeltaPct, quote) {
+      const validMid = midSeries.filter(v => v !== null && !isNaN(v));
+      const validMc = mcSeries.filter(v => v !== null && !isNaN(v));
+      const validVisa = visaSeries.filter(v => v !== null && !isNaN(v));
+      const validAmex = amexSeries.filter(v => v !== null && !isNaN(v));
+
+      const midAvg = validMid.reduce((a, b) => a + b, 0) / validMid.length;
+      const mcAvg = validMc.reduce((a, b) => a + b, 0) / validMc.length;
+      const visaAvg = validVisa.reduce((a, b) => a + b, 0) / validVisa.length;
+      const amexAvg = validAmex.reduce((a, b) => a + b, 0) / validAmex.length;
+
+      document.getElementById('avg-mid').textContent = formatRateValue(midAvg) + ' ' + quote;
+      document.getElementById('avg-mc').textContent = formatRateValue(mcAvg) + ' ' + quote;
+
+      const avgDeltaEl = document.getElementById('avg-delta');
+      const avgDeltaPctEl = document.getElementById('avg-delta-pct');
+      const avgDeltaArrowEl = document.getElementById('avg-delta-arrow');
+
+      const winnerAvg = Math.max(midAvg, mcAvg, visaAvg, amexAvg);
+      let winnerName = '';
+      let winnerDelta = 0;
+
+      if (winnerAvg === mcAvg) {
+        winnerName = 'Mastercard';
+        winnerDelta = mcAvgDeltaPct;
+      } else if (winnerAvg === visaAvg) {
+        winnerName = 'Visa';
+        winnerDelta = visaAvgDeltaPct;
+      } else if (winnerAvg === amexAvg) {
+        winnerName = 'American Express';
+        winnerDelta = amexAvgDeltaPct;
+      } else {
+        winnerName = 'Mid-Market';
+        winnerDelta = 0;
+      }
+
+      avgDeltaPctEl.textContent = winnerName + ': ' + (winnerDelta > 0 ? '+' : '') + winnerDelta.toFixed(2) + '%';
+
+      avgDeltaEl.style.color = '#a0aec0';
+      if (Math.abs(winnerDelta) < 0.01) {
+        avgDeltaArrowEl.textContent = '=';
+      } else if (winnerDelta > 0) {
+        avgDeltaArrowEl.textContent = '▲';
+        avgDeltaEl.style.color = '#48bb78';
+      } else {
+        avgDeltaArrowEl.textContent = '▼';
+        avgDeltaEl.style.color = '#f56565';
+      }
+    }
+
+    document.querySelectorAll('.range-btn[data-days]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('custom-range-inputs').style.display = 'none';
+        const days = parseInt(btn.getAttribute('data-days'));
+        if (currentDate && currentBase && currentQuote) {
+          loadHistory(currentDate, currentBase, currentQuote, days);
+        }
+      });
+    });
+
+    document.getElementById('custom-range-btn').addEventListener('click', () => {
+      document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('custom-range-btn').classList.add('active');
+      document.getElementById('custom-range-inputs').style.display = 'block';
+      document.getElementById('custom-end-date').valueAsDate = new Date(currentDate);
+      const startDate = new Date(currentDate);
+      startDate.setDate(startDate.getDate() - 7);
+      document.getElementById('custom-start-date').valueAsDate = startDate;
+    });
+
+    document.getElementById('apply-custom-range').addEventListener('click', async () => {
+      const startDate = document.getElementById('custom-start-date').value;
+      const endDate = document.getElementById('custom-end-date').value;
+
+      if (!startDate || !endDate) {
+        alert('Please select both start and end dates');
+        return;
+      }
+
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+
+      if (diffDays <= 0) {
+        alert('End date must be after start date');
+        return;
+      }
+
+      if (diffDays > 60) {
+        alert('Range cannot exceed 60 days');
+        return;
+      }
+
+      const section = document.getElementById('chart-section');
+      const caption = document.getElementById('chart-caption');
+      try {
+        caption.textContent = `Loading ${diffDays} days...`;
+        const amt = currentAmount || (parseFloat(document.getElementById('amount').value || '1') || 1);
+        const res = await fetch(`/api/history?date=${endDate}&base=${currentBase}&quote=${currentQuote}&days=${diffDays}&amount=${amt}`);
+        const hist = await res.json();
+        if (!res.ok) throw new Error(hist.error || 'Failed history');
+
+        caption.textContent = `${hist.start} → ${hist.end}`;
+        renderChart(hist.labels, hist.series.mid, hist.series.mc, hist.series.visa, hist.series.amex, currentBase, currentQuote);
+        updateChartStats(hist.series.mid, hist.series.mc, hist.series.visa, hist.series.amex, hist.mcAvgDeltaPct, hist.visaAvgDeltaPct, hist.amexAvgDeltaPct, currentQuote);
+      } catch (e) {
+        caption.textContent = 'History unavailable';
+      }
+    });
+
+    function renderChart(labels, midSeries, mcSeries, visaSeries, amexSeries, base, quote) {
+      const ctx = document.getElementById('rates-chart').getContext('2d');
+
+      if (chartInstance) {
+        chartInstance.destroy();
+      }
+
+      const finite = (v) => Number.isFinite(v);
+      const allValues = [...midSeries, ...mcSeries, ...visaSeries, ...amexSeries].filter(finite);
+      let minVal = Math.min(...allValues);
+      let maxVal = Math.max(...allValues);
+      if (!allValues.length || !Number.isFinite(minVal) || !Number.isFinite(maxVal)) {
+        minVal = 0.99;
+        maxVal = 1.01;
+      }
+      if (minVal === maxVal) {
+        const base = Math.abs(minVal) || 1;
+        minVal -= base * 0.01;
+        maxVal += base * 0.01;
+      }
+      const span = maxVal - minVal;
+      const pad = Math.max(span * 0.06, (Math.abs(maxVal) || 1) * 0.005);
+      const yMin = minVal - pad;
+      const yMax = maxVal + pad;
+
+      chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: 'Mid-Market (ECB)',
+              data: midSeries,
+              borderColor: '#667eea',
+              backgroundColor: 'rgba(102, 126, 234, 0.12)',
+              tension: 0.3,
+              borderWidth: 2,
+              pointRadius: 4,
+              pointHoverRadius: 6,
+              pointBackgroundColor: '#667eea',
+              pointBorderColor: '#fff',
+              pointBorderWidth: 2,
+              pointHoverBackgroundColor: '#667eea',
+              pointHoverBorderColor: '#fff',
+              pointHoverBorderWidth: 3,
+              fill: true,
+              spanGaps: true
+            },
+            {
+              label: 'Mastercard',
+              data: mcSeries,
+              borderColor: '#f79e1b',
+              backgroundColor: 'rgba(247, 158, 27, 0.12)',
+              tension: 0.3,
+              borderWidth: 2,
+              pointRadius: 4,
+              pointHoverRadius: 6,
+              pointBackgroundColor: '#f79e1b',
+              pointBorderColor: '#fff',
+              pointBorderWidth: 2,
+              pointHoverBackgroundColor: '#f79e1b',
+              pointHoverBorderColor: '#fff',
+              pointHoverBorderWidth: 3,
+              fill: true,
+              spanGaps: true
+            },
+            {
+              label: 'Visa',
+              data: visaSeries,
+              borderColor: '#1434cb',
+              backgroundColor: 'rgba(20, 52, 203, 0.12)',
+              tension: 0.3,
+              borderWidth: 2,
+              pointRadius: 4,
+              pointHoverRadius: 6,
+              pointBackgroundColor: '#1434cb',
+              pointBorderColor: '#fff',
+              pointBorderWidth: 2,
+              pointHoverBackgroundColor: '#1434cb',
+              pointHoverBorderColor: '#fff',
+              pointHoverBorderWidth: 3,
+              fill: true,
+              spanGaps: true
+            },
+            {
+              label: 'American Express',
+              data: amexSeries,
+              borderColor: '#006fcf',
+              backgroundColor: 'rgba(0, 111, 207, 0.12)',
+              tension: 0.3,
+              borderWidth: 2,
+              pointRadius: 4,
+              pointHoverRadius: 6,
+              pointBackgroundColor: '#006fcf',
+              pointBorderColor: '#fff',
+              pointBorderWidth: 2,
+              pointHoverBackgroundColor: '#006fcf',
+              pointHoverBorderColor: '#fff',
+              pointHoverBorderWidth: 3,
+              fill: true,
+              spanGaps: true
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: { duration: 200 },
+          interaction: {
+            mode: 'index',
+            intersect: false
+          },
+          scales: {
+            x: {
+              ticks: {
+                color: '#a0aec0',
+                maxTicksLimit: 10
+              },
+              grid: { color: 'rgba(255,255,255,0.06)' }
+            },
+            y: {
+              min: yMin,
+              max: yMax,
+              ticks: { color: '#a0aec0' },
+              grid: { color: 'rgba(255,255,255,0.06)' }
+            }
+          },
+          plugins: {
+            legend: {
+              labels: { color: '#e2e8f0', boxWidth: 12 }
+            },
+            tooltip: {
+              enabled: true,
+              mode: 'index',
+              intersect: false,
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              titleColor: '#fff',
+              bodyColor: '#fff',
+              borderColor: 'rgba(255, 255, 255, 0.2)',
+              borderWidth: 1,
+              padding: 12,
+              displayColors: true,
+              callbacks: {
+                label: (ctx) => `${ctx.dataset.label}: ${Number(ctx.parsed.y).toFixed(4)} ${quote}`
+              }
+            }
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>
