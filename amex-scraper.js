@@ -1,31 +1,16 @@
-let chromiumModule = null;
-let chromiumLauncherType = null; // 'aws' or 'std'
-
-async function getChromium() {
-  if (chromiumModule) return chromiumModule;
+async function launchBrowser() {
   try {
     const aws = await import('playwright-aws-lambda');
-    const impl = aws.default || aws;
-    if (impl && (impl.launchChromium || impl.args)) {
-      chromiumModule = impl;
-      chromiumLauncherType = 'aws';
-      return chromiumModule;
-    }
-  } catch {}
-  const std = await import('playwright');
-  chromiumModule = std.chromium;
-  chromiumLauncherType = 'std';
-  return chromiumModule;
-}
-
-async function launchBrowser() {
-  const chromium = await getChromium();
-  if (chromiumLauncherType === 'aws') {
-    return await (chromium.launchChromium
-      ? chromium.launchChromium({ headless: true, args: chromium.args || [], defaultViewport: chromium.defaultViewport })
-      : chromium.launch({ headless: true }));
+    const core = await import('playwright-core');
+    const chromium = core.chromium;
+    const args = (aws.args) || [];
+    const executablePath = (typeof aws.executablePath === 'function') ? await aws.executablePath() : await (aws.default?.executablePath?.()) ;
+    const defaultViewport = aws.defaultViewport || { width: 1280, height: 720 };
+    return await chromium.launch({ headless: true, args, executablePath, timeout: 30000 });
+  } catch (e) {
+    const std = await import('playwright');
+    return await std.chromium.launch({ headless: true });
   }
-  return await chromium.launch({ headless: true });
 }
 import { getMidMarketRate } from './frankfurter.js';
 
