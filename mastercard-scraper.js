@@ -63,6 +63,16 @@ async function getMastercardRateViaAPI(date, base, quote, amount = 1) {
 
     throw new Error('Could not parse API response');
   } catch (error) {
+    try {
+      const payload = {
+        circuit: 'Mastercard',
+        error: error.message,
+        code: error.code,
+        status: error.response && error.response.status,
+        dataSnippet: error.response && error.response.data ? String(error.response.data).slice(0, 500) : null
+      };
+      console.error(JSON.stringify(payload));
+    } catch {}
     return null;
   }
 }

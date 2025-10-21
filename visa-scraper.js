@@ -72,7 +72,10 @@ async function getVisaRateViaPlaywright(date, base, quote, amount = 1) {
     const expectedUrl = `${VISA_API_BASE}?amount=${amount}&fee=0&utcConvertedDate=${formattedDate}&exchangedate=${formattedDate}&fromCurr=${quote}&toCurr=${base}`;
 
     const apiPromise = page.waitForResponse(
-      response => response.url() === expectedUrl && response.status() === 200,
+      response => {
+        const ok = response.url().includes('/cmsapi/fx/rates') && response.status() === 200;
+        return ok;
+      },
       { timeout: 15000 }
     );
 
@@ -92,6 +95,7 @@ async function getVisaRateViaPlaywright(date, base, quote, amount = 1) {
 
     const response = await apiPromise;
     const data = await response.json();
+    try { console.log(JSON.stringify({ circuit: 'Visa', event: 'api_hit', url: response.url(), status: response.status() })); } catch {}
 
     function logCircuit(name, params, url, json) {
       try {
@@ -112,6 +116,7 @@ async function getVisaRateViaPlaywright(date, base, quote, amount = 1) {
 
     throw new Error('Could not parse Visa API response');
   } catch (error) {
+    try { console.error(JSON.stringify({ circuit: 'Visa', error: error.message, stack: error.stack })); } catch {}
     return null;
   }
 }

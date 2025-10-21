@@ -59,12 +59,44 @@ app.get('/api/rate/:provider', async (req, res) => {
         source = 'ECB via Frankfurter';
         break;
       case 'mc':
-        rate = await getMastercardRate(date, base, quote, amount);
+        rate = await getMastercardRate(date, base, quote, amount).catch((e) => {
+          console.error(JSON.stringify({ event: 'mc_error', reqId, message: e.message, stack: e.stack }));
+          return null;
+        });
+        if (rate === null) {
+          const durationMs = Date.now() - t0;
+          console.log(JSON.stringify({ event: 'rate_unavailable', reqId, provider: 'mc', date, base, quote, amount, durationMs }));
+          return res.json({
+            provider,
+            date,
+            base,
+            quote,
+            unavailable: true,
+            reason: 'Mastercard API unavailable',
+            source: 'Mastercard'
+          });
+        }
         yesterdayRate = await getMastercardRate(yesterdayStr, base, quote, amount).catch(() => null);
         source = 'Mastercard';
         break;
       case 'visa':
-        rate = await getVisaRate(date, base, quote, amount);
+        rate = await getVisaRate(date, base, quote, amount).catch((e) => {
+          console.error(JSON.stringify({ event: 'visa_error', reqId, message: e.message, stack: e.stack }));
+          return null;
+        });
+        if (rate === null) {
+          const durationMs = Date.now() - t0;
+          console.log(JSON.stringify({ event: 'rate_unavailable', reqId, provider: 'visa', date, base, quote, amount, durationMs }));
+          return res.json({
+            provider,
+            date,
+            base,
+            quote,
+            unavailable: true,
+            reason: 'Visa API unavailable',
+            source: 'Visa'
+          });
+        }
         yesterdayRate = await getVisaRate(yesterdayStr, base, quote, amount).catch(() => null);
         source = 'Visa';
         break;
