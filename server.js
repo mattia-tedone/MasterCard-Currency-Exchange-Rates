@@ -24,6 +24,9 @@ app.get('/api/rate/:provider', async (req, res) => {
     const { provider } = req.params;
     const { date, base, quote } = req.query;
     const amount = Math.max(0, parseFloat(req.query.amount || '1') || 1);
+    const reqId = Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+    const t0 = Date.now();
+    console.log(JSON.stringify({ event: 'rate_request', reqId, provider, date, base, quote, amount }));
 
     if (!date || !base || !quote) {
       return res.status(400).json({
@@ -68,6 +71,8 @@ app.get('/api/rate/:provider', async (req, res) => {
       case 'amex':
         rate = await getAmexRate(date, base, quote, amount);
         if (rate === null) {
+          const durationMs = Date.now() - t0;
+          console.log(JSON.stringify({ event: 'rate_unavailable', reqId, provider: 'amex', date, base, quote, amount, durationMs }));
           return res.json({
             provider,
             date,
@@ -88,6 +93,9 @@ app.get('/api/rate/:provider', async (req, res) => {
     const dayDeltaPct = yesterdayRate ? ((rate - yesterdayRate) / yesterdayRate) * 100 : null;
     const converted = rate * amount;
 
+    const durationMs = Date.now() - t0;
+    console.log(JSON.stringify({ event: 'rate_success', reqId, provider, date, base, quote, amount, rate, converted, dayDeltaPct, durationMs, source }));
+
     res.json({
       provider,
       date,
@@ -101,6 +109,7 @@ app.get('/api/rate/:provider', async (req, res) => {
     });
 
   } catch (error) {
+    console.error(JSON.stringify({ event: 'rate_error', message: error.message, stack: error.stack }));
     res.status(500).json({
       error: 'Failed to fetch rate',
       details: error.message
@@ -112,6 +121,9 @@ app.get('/api/rates', async (req, res) => {
   try {
     const { date, base, quote } = req.query;
     const amount = Math.max(0, parseFloat(req.query.amount || '1') || 1);
+    const reqId = Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+    const t0 = Date.now();
+    console.log(JSON.stringify({ event: 'rates_request', reqId, date, base, quote, amount }));
 
     if (!date || !base || !quote) {
       return res.status(400).json({
@@ -165,6 +177,9 @@ app.get('/api/rates', async (req, res) => {
     const visaDayDeltaPct = visaYesterday ? ((visa - visaYesterday) / visaYesterday) * 100 : null;
     const amexDayDeltaPct = (amexUnavailable || !amexYesterday) ? null : ((amex - amexYesterday) / amexYesterday) * 100;
 
+    const durationMs = Date.now() - t0;
+    console.log(JSON.stringify({ event: 'rates_success', reqId, date, base, quote, amount, have: { mid: !!mid, mc: !!mc, visa: !!visa, amex: amex !== null }, durationMs }));
+
     res.json({
       date,
       base,
@@ -192,6 +207,7 @@ app.get('/api/rates', async (req, res) => {
     });
 
   } catch (error) {
+    console.error(JSON.stringify({ event: 'rates_error', message: error.message, stack: error.stack }));
     res.status(500).json({
       error: 'Failed to fetch rates',
       details: error.message
@@ -202,6 +218,9 @@ app.get('/api/rates', async (req, res) => {
 app.get('/api/history', async (req, res) => {
   try {
     const { date, base, quote, days } = req.query;
+    const reqId = Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+    const t0 = Date.now();
+    console.log(JSON.stringify({ event: 'history_request', reqId, date, base, quote, days }));
 
     if (!date || !base || !quote) {
       return res.status(400).json({
@@ -279,6 +298,9 @@ app.get('/api/history', async (req, res) => {
     const visaAvgDeltaPct = ((visaAvg - midAvg) / midAvg) * 100;
     const amexAvgDeltaPct = ((amexAvg - midAvg) / midAvg) * 100;
 
+    const durationMs = Date.now() - t0;
+    console.log(JSON.stringify({ event: 'history_success', reqId, date, base, quote, days: numDays, points: labels.length, durationMs }));
+
     res.json({
       base,
       quote,
@@ -302,8 +324,17 @@ app.get('/api/history', async (req, res) => {
       }
     });
   } catch (error) {
+    console.error(JSON.stringify({ event: 'history_error', message: error.message, stack: error.stack }));
     res.status(500).json({ error: 'Failed to fetch history', details: error.message });
   }
+});
+
+// Global handlers to surface hidden failures in logs
+process.on('unhandledRejection', (reason) => {
+  console.error(JSON.stringify({ event: 'unhandled_rejection', reason: String(reason), stack: reason && reason.stack }));
+});
+process.on('uncaughtException', (err) => {
+  console.error(JSON.stringify({ event: 'uncaught_exception', message: err.message, stack: err.stack }));
 });
 
 // For local development
