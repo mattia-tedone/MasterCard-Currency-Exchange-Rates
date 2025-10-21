@@ -1,13 +1,21 @@
 async function launchBrowser() {
   try {
-    const aws = await import('playwright-aws-lambda');
-    const core = await import('playwright-core');
-    const chromium = core.chromium;
-    const args = (aws.args) || [];
-    const executablePath = (typeof aws.executablePath === 'function') ? await aws.executablePath() : await (aws.default?.executablePath?.()) ;
-    const defaultViewport = aws.defaultViewport || { width: 1280, height: 720 };
-    return await chromium.launch({ headless: true, args, executablePath, timeout: 30000 });
+    const chromiumMod = await import('@sparticuz/chromium');
+    const chromium = chromiumMod.default || chromiumMod;
+    const coreMod = await import('playwright-core');
+    const coreChromium = coreMod.chromium || (coreMod.default && coreMod.default.chromium);
+
+    const executablePath = await chromium.executablePath();
+    const args = chromium.args;
+
+    return await coreChromium.launch({
+      headless: true,
+      args,
+      executablePath,
+      timeout: 30000
+    });
   } catch (e) {
+    console.error('Failed to launch with @sparticuz/chromium, using local playwright:', e);
     const std = await import('playwright');
     return await std.chromium.launch({ headless: true });
   }
