@@ -10,6 +10,6 @@
     "express": "^4.18.2",
     "axios": "^1.6.0",
     "playwright-core": "^1.47.2",
-    "@sparticuz/chromium": "^131.0.2"
+    "@sparticuz/chromium": "130.0.0"
   }
 }
