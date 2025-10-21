@@ -1,4 +1,32 @@
-import { chromium } from 'playwright';
+let chromiumModule = null;
+let chromiumLauncherType = null; // 'aws' or 'std'
+
+async function getChromium() {
+  if (chromiumModule) return chromiumModule;
+  try {
+    const aws = await import('playwright-aws-lambda');
+    const impl = aws.default || aws;
+    if (impl && (impl.launchChromium || impl.args)) {
+      chromiumModule = impl;
+      chromiumLauncherType = 'aws';
+      return chromiumModule;
+    }
+  } catch {}
+  const std = await import('playwright');
+  chromiumModule = std.chromium;
+  chromiumLauncherType = 'std';
+  return chromiumModule;
+}
+
+async function launchBrowser() {
+  const chromium = await getChromium();
+  if (chromiumLauncherType === 'aws') {
+    return await (chromium.launchChromium
+      ? chromium.launchChromium({ headless: true, args: chromium.args || [], defaultViewport: chromium.defaultViewport })
+      : chromium.launch({ headless: true }));
+  }
+  return await chromium.launch({ headless: true });
+}
 import { getMidMarketRate } from './frankfurter.js';
 
 const AMEX_URL = 'https://www.americanexpress.com/en-us/foreign-exchange/fxrates/';
@@ -57,12 +85,11 @@ function getCacheKey(date, base, quote) {
 
 async function ensureBrowser() {
   if (!sharedBrowser || !sharedPage) {
-    sharedBrowser = await chromium.launch({ headless: true });
+    sharedBrowser = await launchBrowser();
     const context = await sharedBrowser.newContext({
       userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       viewport: { width: 1280, height: 720 }
     });
-
     sharedPage = await context.newPage();
     await sharedPage.goto(AMEX_URL, { waitUntil: 'networkidle' });
     await sharedPage.waitForTimeout(2000);

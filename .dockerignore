@@ -1,0 +1,12 @@
+node_modules
+npm-debug.log
+.git
+.gitignore
+.vercel
+.DS_Store
+tmp
+*.local
+**/*.swp
+**/*.swo
+**/*.swx
+

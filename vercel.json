@@ -18,5 +18,15 @@
       "src": "/(.*)",
       "dest": "server.js"
     }
-  ]
+  ],
+  "functions": {
+    "server.js": {
+      "maxDuration": 60,
+      "memory": 1536,
+      "includeFiles": [
+        "public/**",
+        "node_modules/playwright-aws-lambda/**"
+      ]
+    }
+  }
 }
