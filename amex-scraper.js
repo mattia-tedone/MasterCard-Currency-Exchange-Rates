@@ -2,22 +2,20 @@ async function launchBrowser() {
   try {
     const chromiumMod = await import('@sparticuz/chromium');
     const chromium = chromiumMod.default || chromiumMod;
-    const coreMod = await import('playwright-core');
-    const coreChromium = coreMod.chromium || (coreMod.default && coreMod.default.chromium);
+    const { chromium: playwright } = await import('playwright-core');
 
     const executablePath = await chromium.executablePath();
-    const args = chromium.args;
 
-    return await coreChromium.launch({
+    return await playwright.launch({
+      args: chromium.args,
+      executablePath: executablePath,
       headless: true,
-      args,
-      executablePath,
       timeout: 30000
     });
   } catch (e) {
     console.error('Failed to launch with @sparticuz/chromium, using local playwright:', e);
-    const std = await import('playwright');
-    return await std.chromium.launch({ headless: true });
+    const { chromium } = await import('playwright');
+    return await chromium.launch({ headless: true });
   }
 }
 import { getMidMarketRate } from './frankfurter.js';
