@@ -12,7 +12,7 @@ async function launchBrowser() {
     return await playwright.launch({
       args: chromium.args,
       executablePath: executablePath,
-      headless: chromium.headless,
+      headless: true,
     });
   } else {
     // Development: Use local Playwright
