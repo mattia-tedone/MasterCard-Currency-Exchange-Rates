@@ -1,7 +1,10 @@
 async function launchBrowser() {
-  try {
-    const chromiumMod = await import('@sparticuz/chromium');
-    const chromium = chromiumMod.default || chromiumMod;
+  const isProduction = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
+
+  if (isProduction) {
+    // Production: Use @sparticuz/chromium (for Vercel/Lambda)
+    const chromiumBinary = await import('@sparticuz/chromium');
+    const chromium = chromiumBinary.default || chromiumBinary;
     const { chromium: playwright } = await import('playwright-core');
 
     const executablePath = await chromium.executablePath();
@@ -9,13 +12,14 @@ async function launchBrowser() {
     return await playwright.launch({
       args: chromium.args,
       executablePath: executablePath,
-      headless: true,
-      timeout: 30000
+      headless: chromium.headless,
     });
-  } catch (e) {
-    console.error('Failed to launch with @sparticuz/chromium, using local playwright:', e);
+  } else {
+    // Development: Use local Playwright
     const { chromium } = await import('playwright');
-    return await chromium.launch({ headless: true });
+    return await chromium.launch({
+      headless: true,
+    });
   }
 }
 
